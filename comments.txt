@@ -3,3 +3,11 @@
 查看package.json文件，在scripts下的build字段对应的命令为"node scripts/build.js"。在这个文件中定义了所有与Vue构建相关的主要配置和步骤。
 
 1）从"scripts/config.js"中读取构建相关配置。而这个配置是针对rollup这个构建工具而创建。
+
+2、Vue实例的构造函数
+
+从"entry-runtime-with-compiler.js"文件阅读Vue实例构造函数的的定义。因为这个版本的Vue既包含运行时，而且还包含编译相关代码。
+
+一路追到"src/core/instance/index.js"文件，即可看到Vue构造函数的定义位置。构造函数的下面，可以看到，执行了若干mixin函数。这些mixin函数的作用就是向Vue构造函数绑定大量功能函数。
+
+而这里之所以，要使用ES5的形式定义构造函数，而不使用ES6的形式，原因是向ES6中的Class动态定义成员函数，非常不方便，而ES5的方式就很方便。
