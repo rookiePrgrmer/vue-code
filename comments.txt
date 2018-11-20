@@ -1,0 +1,5 @@
+1、Vue的构建
+
+查看package.json文件，在scripts下的build字段对应的命令为"node scripts/build.js"。在这个文件中定义了所有与Vue构建相关的主要配置和步骤。
+
+1）从"scripts/config.js"中读取构建相关配置。而这个配置是针对rollup这个构建工具而创建。

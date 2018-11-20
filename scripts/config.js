@@ -27,13 +27,17 @@ const weexFactoryPlugin = {
 const aliases = require('./alias')
 const resolve = p => {
   const base = p.split('/')[0]
-  if (aliases[base]) {
+  if (aliases[base]) { // 如果是入口文件
     return path.resolve(aliases[base], p.slice(base.length + 1))
-  } else {
+  } else { // 如果是出口文件
     return path.resolve(__dirname, '../', p)
   }
 }
 
+/* 下面是所有构建方式对应的入口、出口文件，以及文件类型，和头注释信息 */
+// cjs：common js
+// es：ES Module
+// umd：各种引入模式兼容类型，包括cjs、amd，以及浏览器通过script标签直接引入
 const builds = {
   // Runtime only (CommonJS). Used by bundlers e.g. Webpack & Browserify
   'web-runtime-cjs': {
@@ -168,10 +172,11 @@ const builds = {
   }
 }
 
+/* 生成rollup相关构建配置 */
 function genConfig (name) {
   const opts = builds[name]
   const config = {
-    input: opts.entry,
+    input: opts.entry, // 入口文件
     external: opts.external,
     plugins: [
       replace({
@@ -183,10 +188,10 @@ function genConfig (name) {
       buble(),
       alias(Object.assign({}, aliases, opts.alias))
     ].concat(opts.plugins || []),
-    output: {
+    output: { // 输出文件
       file: opts.dest,
       format: opts.format,
-      banner: opts.banner,
+      banner: opts.banner, // 每个文件开头的信息注释
       name: opts.moduleName || 'Vue'
     },
     onwarn: (msg, warn) => {
