@@ -137,7 +137,13 @@ export function mountComponent (
   hydrating?: boolean
 ): Component {
   vm.$el = el // 将挂载点缓存起来
-  if (!vm.$options.render) { // 如果用户没有提供render函数
+  // 如果配置对象中没有render函数，
+  // 这个有3种可能，
+  // 要么是，用户使用的是 runtime only 版本，但是没有提供render函数
+  // 要么是，用户使用的是 runtime only 版本，但是尝试提供非#开头的template属性，以期vue能在运行时进行编译
+  // 要么是，用户使用的是 runtime only 版本，也确实没有提供template属性，但是却提供了el属性，并且能够正确地解析为dom对象，此时由于会把el的outerHTML作为template属性，因此等同于提供了template属性
+  // 以上这3种可能都会报错，因为 runtime only 版本的 Vue 无法解析
+  if (!vm.$options.render) {
     vm.$options.render = createEmptyVNode // 则Vue通过createEmptyVNode方法提供一个render函数
     if (process.env.NODE_ENV !== 'production') {
       /* istanbul ignore if */

@@ -45,6 +45,8 @@ Vue.prototype.$mount = function (
     // 如果vm实例上定义了template属性
     if (template) {
       if (typeof template === 'string') {
+        // 如果template属性是字符串，并且第一个字符是#，
+        // 则它会被作为选择符，获取这个元素的innerHTML
         if (template.charAt(0) === '#') {
           template = idToTemplate(template)
           /* istanbul ignore if */
