@@ -207,6 +207,7 @@ export const bind = Function.prototype.bind
 /**
  * Convert an Array-like object to a real Array.
  */
+/* 将类数组对象转换为真数组 */
 export function toArray (list: any, start?: number): Array<any> {
   start = start || 0
   let i = list.length - start
@@ -220,6 +221,7 @@ export function toArray (list: any, start?: number): Array<any> {
 /**
  * Mix properties into target object.
  */
+/* 对象属性的浅拷贝 */
 export function extend (to: Object, _from: ?Object): Object {
   for (const key in _from) {
     to[key] = _from[key]

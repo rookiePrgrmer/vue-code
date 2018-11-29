@@ -16,6 +16,7 @@ export function initMixin (Vue: Class<Component>) {
   Vue.prototype._init = function (options?: Object) {
     const vm: Component = this
     // a uid
+    // 为当前vue实例定义uid
     vm._uid = uid++
 
     let startTag, endTag
@@ -29,12 +30,17 @@ export function initMixin (Vue: Class<Component>) {
     // a flag to avoid this being observed
     vm._isVue = true
     // merge options
+    // 合并配置
     if (options && options._isComponent) {
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
       // internal component options needs special treatment.
+
+      // 优化内部组件的实例化过程
+      // 因为动态地合并配置相当缓慢，并且内部组件的配置没有必要进行特殊处理
       initInternalComponent(vm, options)
     } else {
+      // 这里可以看到，将我们传递给Vue构造函数的配置和Vue内部的配置进行了合并，最终合并成了$options对象
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -48,13 +54,15 @@ export function initMixin (Vue: Class<Component>) {
       vm._renderProxy = vm
     }
     // expose real self
+    // 通过_self字段对外暴露真实的Vue实例
     vm._self = vm
-    initLifecycle(vm)
-    initEvents(vm)
-    initRender(vm)
+    // 以下是各种初始化操作
+    initLifecycle(vm) // 初始化生命周期
+    initEvents(vm) // 初始化事件中心
+    initRender(vm) // 初始化渲染
     callHook(vm, 'beforeCreate')
     initInjections(vm) // resolve injections before data/props
-    initState(vm)
+    initState(vm) // 初始化data数据
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
 
@@ -65,6 +73,7 @@ export function initMixin (Vue: Class<Component>) {
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
 
+    // 对模板进行挂在，目的是对页面进行渲染
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }

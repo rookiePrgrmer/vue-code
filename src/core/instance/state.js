@@ -50,7 +50,7 @@ export function initState (vm: Component) {
   const opts = vm.$options
   if (opts.props) initProps(vm, opts.props)
   if (opts.methods) initMethods(vm, opts.methods)
-  if (opts.data) {
+  if (opts.data) { // 如果vm实例上有data属性
     initData(vm)
   } else {
     observe(vm._data = {}, true /* asRootData */)
@@ -111,8 +111,10 @@ function initProps (vm: Component, propsOptions: Object) {
 
 function initData (vm: Component) {
   let data = vm.$options.data
+  // 这里的 data 目前通常都是一个函数，返回一个 data 对象
+  // 注意这里将data函数返回的对象又赋值给了 vm._data 属性
   data = vm._data = typeof data === 'function'
-    ? getData(data, vm)
+    ? getData(data, vm) // 这里调用我们自定义的data函数，获取其返回的data对象
     : data || {}
   if (!isPlainObject(data)) {
     data = {}
@@ -130,6 +132,7 @@ function initData (vm: Component) {
   while (i--) {
     const key = keys[i]
     if (process.env.NODE_ENV !== 'production') {
+      // 保证methods上没有定义data的同名属性
       if (methods && hasOwn(methods, key)) {
         warn(
           `Method "${key}" has already been defined as a data property.`,
@@ -137,6 +140,7 @@ function initData (vm: Component) {
         )
       }
     }
+    // 保证props上没有定义data的同名属性
     if (props && hasOwn(props, key)) {
       process.env.NODE_ENV !== 'production' && warn(
         `The data property "${key}" is already declared as a prop. ` +
@@ -144,6 +148,7 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 如果满足了上面所有的限制条件，则把 _data 上定义的属性以 getter 、 setter 函数的形式绑定到 vm 实例上
       proxy(vm, `_data`, key)
     }
   }
@@ -155,6 +160,7 @@ export function getData (data: Function, vm: Component): any {
   // #7573 disable dep collection when invoking data getters
   pushTarget()
   try {
+    // 这里可以看到，data函数是有一个入参的就是vm
     return data.call(vm, vm)
   } catch (e) {
     handleError(e, vm, `data()`)

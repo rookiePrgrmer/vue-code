@@ -136,9 +136,9 @@ export function mountComponent (
   el: ?Element,
   hydrating?: boolean
 ): Component {
-  vm.$el = el
-  if (!vm.$options.render) {
-    vm.$options.render = createEmptyVNode
+  vm.$el = el // 将挂载点缓存起来
+  if (!vm.$options.render) { // 如果用户没有提供render函数
+    vm.$options.render = createEmptyVNode // 则Vue通过createEmptyVNode方法提供一个render函数
     if (process.env.NODE_ENV !== 'production') {
       /* istanbul ignore if */
       if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
