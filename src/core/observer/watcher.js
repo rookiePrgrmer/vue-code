@@ -92,17 +92,20 @@ export default class Watcher {
     }
     this.value = this.lazy
       ? undefined
-      : this.get()
+      : this.get() // 最后这里调用了一次get方法
   }
 
   /**
    * Evaluate the getter, and re-collect dependencies.
    */
+  // 这个方法会执行一些依赖收集等相关的操作
   get () {
     pushTarget(this)
     let value
     const vm = this.vm
     try {
+      // 这里又调用了expOrFn，也就是实例化Watcher时，传入的updateComponent
+      // 而updateComponent的方法体就是：vm._update(vm._render(), hydrating)
       value = this.getter.call(vm, vm)
     } catch (e) {
       if (this.user) {

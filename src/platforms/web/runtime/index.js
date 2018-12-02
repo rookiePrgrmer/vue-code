@@ -31,6 +31,10 @@ extend(Vue.options.directives, platformDirectives)
 extend(Vue.options.components, platformComponents)
 
 // install platform patch function
+// 这里判断了当前是否处于浏览器环境，
+// 由于在Node环境中也可以运行Vue，
+// 但是在服务端代码中又无需处理dom相关操作，
+// 因此在Node环境中__patch__方法是个空函数
 Vue.prototype.__patch__ = inBrowser ? patch : noop
 
 // public mount method

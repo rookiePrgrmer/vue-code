@@ -26,37 +26,47 @@ const ALWAYS_NORMALIZE = 2
 // wrapper function for providing a more flexible interface
 // without getting yelled at by flow
 export function createElement (
-  context: Component,
-  tag: any,
-  data: any,
-  children: any,
+  context: Component, // vm实例
+  tag: any, // 标签名称
+  data: any, // 用于渲染页面的数据
+  children: any, // 子节点
   normalizationType: any,
   alwaysNormalize: boolean
 ): VNode | Array<VNode> {
+  // 首先判断data是否是数组，或者是否是基本数据类型
+  // 如果满足这两个条件之一，这就表示这个data实际是第4个参数children，
+  // 下面的操作就是把入参赋值给正确的变量s
   if (Array.isArray(data) || isPrimitive(data)) {
     normalizationType = children
     children = data
     data = undefined
   }
+  // 判断是否对children进行规范化
   if (isTrue(alwaysNormalize)) {
     normalizationType = ALWAYS_NORMALIZE
   }
+
+  // 以上对参数进行处理以后，真正调用的是这个方法
   return _createElement(context, tag, data, children, normalizationType)
 }
 
 export function _createElement (
   context: Component,
   tag?: string | Class<Component> | Function | Object,
-  data?: VNodeData,
+  data?: VNodeData, // 用于渲染页面的数据
   children?: any,
   normalizationType?: number
 ): VNode | Array<VNode> {
+  // 判断VNodeData是否是响应式的，如果是响应式的则给出错误提示
+  // 这里判断条件是，如果对象上定义了__ob__的属性，就表示这个对象是响应式的
   if (isDef(data) && isDef((data: any).__ob__)) {
     process.env.NODE_ENV !== 'production' && warn(
       `Avoid using observed data object as vnode data: ${JSON.stringify(data)}\n` +
       'Always create fresh vnode data objects in each render!',
       context
     )
+
+    // 这里创建了一个空的VNode节点
     return createEmptyVNode()
   }
   // object syntax in v-bind
@@ -87,18 +97,30 @@ export function _createElement (
     data.scopedSlots = { default: children[0] }
     children.length = 0
   }
+
+  /* 以下逻辑非常重要 */
+  // 对children进行normalize，也即是规范化
+  // 合理的规范化，主要的目的就是把从外部传入的children参数，
+  // 转换为一维的VNode数组
+  // 这就是createElement函数，做的第一个事情
   if (normalizationType === ALWAYS_NORMALIZE) {
     children = normalizeChildren(children)
   } else if (normalizationType === SIMPLE_NORMALIZE) {
     children = simpleNormalizeChildren(children)
   }
+
+  /* 以下逻辑非常重要 */
+  // createElement做的第二个比较重要事情，就是创建VNodes
   let vnode, ns
   if (typeof tag === 'string') {
     let Ctor
     ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag)
+    // 如果tag是平台（浏览器）内置的标签，比如div
     if (config.isReservedTag(tag)) {
       // platform built-in elements
+      // 这里创建出来的vnode，就是createElement最终的返回值
       vnode = new VNode(
+        // 其实parsePlatformTagName仅仅是返回了入参
         config.parsePlatformTagName(tag), data, children,
         undefined, undefined, context
       )

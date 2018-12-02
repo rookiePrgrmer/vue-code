@@ -48,6 +48,9 @@ export function initMixin (Vue: Class<Component>) {
       )
     }
     /* istanbul ignore else */
+    // 为vm实例设置_renderProxy属性，
+    // 如果是生产环境_renderProxy属性就是vm本身
+    // 如果是开发环境，则通过initProxy方法初始化_renderProxy
     if (process.env.NODE_ENV !== 'production') {
       initProxy(vm)
     } else {

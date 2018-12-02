@@ -23,6 +23,11 @@ export function initRender (vm: Component) {
   const renderContext = parentVnode && parentVnode.context
   vm.$slots = resolveSlots(options._renderChildren, renderContext)
   vm.$scopedSlots = emptyObject
+
+  // 这里通过createElement方法创建了两个vm实例属性_c和$createElement
+  // 其中，_c和$createElement的区别仅仅是传给createElement函数的最后一个参数不同
+  // _c是用于对，在通过webpack构建时，通过template标签生成的render函数进行渲染
+  // ￥createElement是用于对，用户自己提供的render函数进行渲染
   // bind the createElement fn to this instance
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
@@ -58,8 +63,10 @@ export function renderMixin (Vue: Class<Component>) {
     return nextTick(fn, this)
   }
 
+  // Vue实例的内部渲染函数，返回值是一个VNode
   Vue.prototype._render = function (): VNode {
     const vm: Component = this
+    // 从$options获取到的渲染函数render，因此页面渲染还是要依靠render
     const { render, _parentVnode } = vm.$options
 
     // reset _rendered flag on slots for duplicate slot check
@@ -80,6 +87,13 @@ export function renderMixin (Vue: Class<Component>) {
     // render self
     let vnode
     try {
+      // 这行代码就是_render的核心代码
+      // 第一次个参数vm._renderProxy，在生产环境中就是vm，而在开发环境中就是对vm的一个代理对象，
+      // vm._renderProxy的定义是在init中定义的
+      // $createElement函数，是在initRender方法中定义给vm的，
+      // 而initRender方法又是在vm._init中执行的
+      // $createElement方法，其实就是我们在创建Vue实例时，设置的render函数在执行时，所接收的参数
+      // render函数最终返回一个VNode对象
       vnode = render.call(vm._renderProxy, vm.$createElement)
     } catch (e) {
       handleError(e, vm, `render`)
@@ -102,7 +116,11 @@ export function renderMixin (Vue: Class<Component>) {
       }
     }
     // return empty vnode in case the render function errored out
+    // 如果render函数返回对象的类型不是VNode
     if (!(vnode instanceof VNode)) {
+      // 如果当前处于生产环境，并且vnode对象是一个数组，
+      // 这就表示在模板中定义了多个根节点，此时就会返回vnode数组，
+      // 正如下面给出的警告提示
       if (process.env.NODE_ENV !== 'production' && Array.isArray(vnode)) {
         warn(
           'Multiple root nodes returned from render function. Render function ' +

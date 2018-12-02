@@ -50,6 +50,12 @@ export function initLifecycle (vm: Component) {
 export function lifecycleMixin (Vue: Class<Component>) {
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
     const vm: Component = this
+
+    // 首先定义了若干变量，
+    // 其中部分变量与数据更新相关，
+    // 这里指的数据更新就是当页面监听的数据发生变化时，重新渲染页面的过程。
+    // _update函数有2个调用时机，一个是首次渲染时，里一个就是上述的数据更新时，
+    // 那么在首次渲染时，下面这些变量都是空
     const prevEl = vm.$el
     const prevVnode = vm._vnode
     const prevActiveInstance = activeInstance
@@ -57,8 +63,10 @@ export function lifecycleMixin (Vue: Class<Component>) {
     vm._vnode = vnode
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
+    // 首次渲染时prevVnode为空
     if (!prevVnode) {
       // initial render
+      // __patch__方法是在platforms/web/runtime/index.js中定义
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
     } else {
       // updates
@@ -139,10 +147,12 @@ export function mountComponent (
   vm.$el = el // 将挂载点缓存起来
   // 如果配置对象中没有render函数，
   // 这个有3种可能，
-  // 要么是，用户使用的是 runtime only 版本，但是没有提供render函数
-  // 要么是，用户使用的是 runtime only 版本，但是尝试提供非#开头的template属性，以期vue能在运行时进行编译
-  // 要么是，用户使用的是 runtime only 版本，也确实没有提供template属性，但是却提供了el属性，并且能够正确地解析为dom对象，此时由于会把el的outerHTML作为template属性，因此等同于提供了template属性
-  // 以上这3种可能都会报错，因为 runtime only 版本的 Vue 无法解析
+  // 1、用的是 runtime only 版本，但是没有提供render函数
+  // 2、用的是 runtime only 版本，但是没有提供render函数，而提供了非#开头的template属性，以期vue能在运行时进行编译
+  // 3、用的是 runtime only 版本，没有提供render函数，也确实没有提供template属性，但是却提供了el属性，并且能够正确地解析为dom对象，此时由于会把el的outerHTML作为template属性，因此等同于提供了template属性
+  // 以上这3种可能都会报错，因为 runtime only 版本的 Vue，没有render函数无法渲染模板，
+  // 因此下面的给出了提示，如果使用runtime-only版本，要么提供render函数，要么使用webpack对template标签编译生成render函数，
+  // 要么干脆就使用 runtime + compiler 版本
   if (!vm.$options.render) {
     vm.$options.render = createEmptyVNode // 则Vue通过createEmptyVNode方法提供一个render函数
     if (process.env.NODE_ENV !== 'production') {
@@ -163,10 +173,14 @@ export function mountComponent (
       }
     }
   }
+
+  // 这里调用了生命周期函数 beforeMount
   callHook(vm, 'beforeMount')
 
   let updateComponent
   /* istanbul ignore if */
+  // 以下判断，是否要求对性能监控进行埋点，具体参考Vue官方文档，
+  // 如果没有设置的话直接走else
   if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
     updateComponent = () => {
       const name = vm._name
@@ -186,6 +200,12 @@ export function mountComponent (
     }
   } else {
     updateComponent = () => {
+      // 下面这行代码就是真正执行挂载逻辑的代码，
+      // 具体就是把挂载点的标签替换为渲染后的dom，
+      // 其中_render函数的作用是生成一个VNode对象
+      // hydrating是服务端渲染相关参数
+      // 而_update就是讲VNode渲染成真正的dom
+      // _update是在lifecycleMixin中定义的
       vm._update(vm._render(), hydrating)
     }
   }
@@ -193,13 +213,15 @@ export function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  // 这里通过一个渲染watcher，来执行上面定义的updateComponent函数，
+  // 之所以这里要通过watcher的形式，是因为渲染操作在首次渲染后过后，还要不断地随着数据的变化而重新渲染
   new Watcher(vm, updateComponent, noop, {
     before () {
       if (vm._isMounted) {
         callHook(vm, 'beforeUpdate')
       }
     }
-  }, true /* isRenderWatcher */)
+  }, true /* isRenderWatcher */) // 这个true，表示这个watcher是一个渲染watcher
   hydrating = false
 
   // manually mounted instance, call mounted on self

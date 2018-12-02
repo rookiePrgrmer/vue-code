@@ -80,6 +80,10 @@ export function createPatchFunction (backend) {
 
   const { modules, nodeOps } = backend
 
+  // createPatchFunction主要做的逻辑就是，
+  // 把各个Vue原生指令中的，那些按照snabdom标准实现的钩子函数，
+  // 保存到整个大的钩子函数数组中，
+  // 其中hooks中就定义了所有标准的钩子函数
   for (i = 0; i < hooks.length; ++i) {
     cbs[hooks[i]] = []
     for (j = 0; j < modules.length; ++j) {
@@ -689,6 +693,7 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // 那么这里返回的patch方法，就是在_update中，调用的vm.__patch__方法的本体
   return function patch (oldVnode, vnode, hydrating, removeOnly) {
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)

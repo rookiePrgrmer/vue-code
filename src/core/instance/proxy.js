@@ -34,6 +34,7 @@ if (process.env.NODE_ENV !== 'production') {
     )
   }
 
+  // 判断当前环境是否支持Proxy的API，这是es6提供的
   const hasProxy =
     typeof Proxy !== 'undefined' && isNative(Proxy)
 
@@ -52,13 +53,20 @@ if (process.env.NODE_ENV !== 'production') {
     })
   }
 
+  // proxy的handler对象，这里代理has操作，也就是判断指定属性是否存在于目标对象中
+  // has方法接受两个参数，分别是目标对象和目标属性名
+  // 这个代理的主要作用是，监听模板中是否使用了未定义的实例变量
   const hasHandler = {
     has (target, key) {
+      // 这里判断指定属性是否存在
       const has = key in target
+      // 这里判断这个属性是否是全局属性，或者是一个string类型的，以"_"开头的data下的私有属性
       const isAllowed = allowedGlobals(key) ||
         (typeof key === 'string' && key.charAt(0) === '_' && !(key in target.$data))
+      // 如果以上条件均不满足
       if (!has && !isAllowed) {
         if (key in target.$data) warnReservedPrefix(target, key)
+        // 则会给出警告，提示模板中使用的变量，一定要在实例中声明
         else warnNonPresent(target, key)
       }
       return has || !isAllowed
@@ -75,10 +83,13 @@ if (process.env.NODE_ENV !== 'production') {
     }
   }
 
+  // 处理_renderProxy的函数
   initProxy = function initProxy (vm) {
+    // 如果环境支持Proxy的API
     if (hasProxy) {
       // determine which proxy handler to use
       const options = vm.$options
+      // 由于在 runtime + compiler 的环境下，没有设置_withStripped因此，这里handlers就是hasHandler
       const handlers = options.render && options.render._withStripped
         ? getHandler
         : hasHandler
