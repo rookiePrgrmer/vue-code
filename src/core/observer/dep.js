@@ -34,6 +34,7 @@ export default class Dep {
     }
   }
 
+  // 通知变化
   notify () {
     // stabilize the subscriber list first
     const subs = this.subs.slice()
@@ -55,6 +56,7 @@ export default class Dep {
 Dep.target = null
 const targetStack = []
 
+// Dep.target保存着一个观察者对象
 export function pushTarget (_target: ?Watcher) {
   if (Dep.target) targetStack.push(Dep.target)
   Dep.target = _target

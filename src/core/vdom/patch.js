@@ -94,6 +94,7 @@ export function createPatchFunction (backend) {
   }
 
   function emptyNodeAt (elm) {
+    // 这里VNode第6个参数就是这个VNode对应的真实地dom
     return new VNode(nodeOps.tagName(elm).toLowerCase(), {}, [], undefined, elm)
   }
 
@@ -133,6 +134,7 @@ export function createPatchFunction (backend) {
 
   let creatingElmInVPre = 0
 
+  // 将VNode挂载到真实的dom上
   function createElm (
     vnode,
     insertedVnodeQueue,
@@ -142,6 +144,7 @@ export function createPatchFunction (backend) {
     ownerArray,
     index
   ) {
+    // 这个逻辑暂时走不到，暂时忽略
     if (isDef(vnode.elm) && isDef(ownerArray)) {
       // This vnode was used in a previous render!
       // now it's used as a new node, overwriting its elm would cause
@@ -152,6 +155,7 @@ export function createPatchFunction (backend) {
     }
 
     vnode.isRootInsert = !nested // for transition enter check
+    // 这里尝试创建一个组件，这里先不关注
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
     }
@@ -164,6 +168,9 @@ export function createPatchFunction (backend) {
         if (data && data.pre) {
           creatingElmInVPre++
         }
+        // 在开发环境中，如果使用了未定义的标签名称，会给出错误提示，
+        // 常见场景就是，当我们在模板中，使用自定义组件，
+        // 但又没有在局部/全局注册这个组件时，会给出这个错误提示
         if (isUnknownElement(vnode, creatingElmInVPre)) {
           warn(
             'Unknown custom element: <' + tag + '> - did you ' +
@@ -174,12 +181,16 @@ export function createPatchFunction (backend) {
         }
       }
 
+      /* 以下逻辑非常重要 */
+      // 如果有namespace，则创建带有namespace的dom（通常是svg），
+      // 否则创建普通的dom
       vnode.elm = vnode.ns
         ? nodeOps.createElementNS(vnode.ns, tag)
         : nodeOps.createElement(tag, vnode)
       setScope(vnode)
 
       /* istanbul ignore if */
+      // 以下weex平台相关逻辑暂时跳过
       if (__WEEX__) {
         // in Weex, the default insertion order is parent-first.
         // List items can be optimized to use children-first insertion
@@ -707,7 +718,9 @@ export function createPatchFunction (backend) {
       // empty mount (likely as component), create new root element
       isInitialPatch = true
       createElm(vnode, insertedVnodeQueue)
+    // 首次渲染时，执行的这个分支
     } else {
+      // 判断oldVnode是否是真实的dom，那么在首次渲染时，这个就是true
       const isRealElement = isDef(oldVnode.nodeType)
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
         // patch existing root node
@@ -717,10 +730,12 @@ export function createPatchFunction (backend) {
           // mounting to a real element
           // check if this is server-rendered content and if we can perform
           // a successful hydration.
+          // 服务端渲染相关
           if (oldVnode.nodeType === 1 && oldVnode.hasAttribute(SSR_ATTR)) {
             oldVnode.removeAttribute(SSR_ATTR)
             hydrating = true
           }
+          // 服务端渲染相关
           if (isTrue(hydrating)) {
             if (hydrate(oldVnode, vnode, insertedVnodeQueue)) {
               invokeInsertHook(vnode, insertedVnodeQueue, true)
@@ -737,14 +752,19 @@ export function createPatchFunction (backend) {
           }
           // either not server-rendered, or hydration failed.
           // create an empty node and replace it
+          // 这里如果不是服务端渲染，并且是首次渲染时，将真实dom转换为Vnode
           oldVnode = emptyNodeAt(oldVnode)
         }
 
         // replacing existing element
+        // 这里的elm就是上面的传入emptyNodeAt的oldVnode
         const oldElm = oldVnode.elm
+        // 获取到oldElm的父元素，对于根组件来说，比如App.vue，
+        // 这个parentElm就是body
         const parentElm = nodeOps.parentNode(oldElm)
 
         // create new node
+        // 作用就是讲VNode挂载到真实的dom上
         createElm(
           vnode,
           insertedVnodeQueue,

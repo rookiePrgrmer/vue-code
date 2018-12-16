@@ -159,6 +159,8 @@ export function defineReactive (
     configurable: true,
     get: function reactiveGetter () {
       const value = getter ? getter.call(obj) : val
+      // 这里的target属性是在Watcher的get函数中赋值的，
+      // 因此执行到get拦截器时，target一定有值
       if (Dep.target) {
         dep.depend()
         if (childOb) {

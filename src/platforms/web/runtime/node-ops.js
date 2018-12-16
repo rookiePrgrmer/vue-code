@@ -2,6 +2,7 @@
 
 import { namespaceMap } from 'web/util/index'
 
+// 就是对document.createElement的封装
 export function createElement (tagName: string, vnode: VNode): Element {
   const elm = document.createElement(tagName)
   if (tagName !== 'select') {

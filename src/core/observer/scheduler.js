@@ -127,15 +127,23 @@ function callActivatedHooks (queue) {
  * Jobs with duplicate IDs will be skipped unless it's
  * pushed when the queue is being flushed.
  */
+// 如果没有指定观察者是同步更新，那么这个观察者的更新机制就是异步的，
+// 也就是要通过queueWatcher方法将观察者添加到队列中，然后等待突变完成后统一执行更新
 export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
   if (has[id] == null) {
     has[id] = true
+    // 如果当前没有正在执行更新，那么就把这个观察者追加到队列
     if (!flushing) {
       queue.push(watcher)
+    // 如果队列正在执行更新
+    // 比如，队列正在执行更新的同时，计算属性的观察者就可能会尝试添加到队列中，
+    // 原因是，当更新渲染函数的观察者时，如果模板中依赖了计算属性，那么就会去执行计算属性的get拦截器，
+    // 此时计算属性的观察者就会有入队的操作
     } else {
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
+      // 以下代码用于保证观察者的执行顺序
       let i = queue.length - 1
       while (i > index && queue[i].id > watcher.id) {
         i--
@@ -143,6 +151,9 @@ export function queueWatcher (watcher: Watcher) {
       queue.splice(i + 1, 0, watcher)
     }
     // queue the flush
+    // 这个变量的作用，就是保证，
+    // 无论queueWatcher执行多少次，下面的flushSchedulerQueue方法只会执行一次，
+    // 直到flushSchedulerQueue执行完毕
     if (!waiting) {
       waiting = true
 

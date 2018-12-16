@@ -67,9 +67,12 @@ export function lifecycleMixin (Vue: Class<Component>) {
     if (!prevVnode) {
       // initial render
       // __patch__方法是在platforms/web/runtime/index.js中定义
+      // 在首次渲染时，第一个参数就是我们在创建Vue实例时，
+      // 指定的挂载点对应的真实dom，第二个就是通过_render函数生成的VNode
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
     } else {
       // updates
+      // 而在响应式更新时，第一个参数是上一次渲染生成的VNode
       vm.$el = vm.__patch__(prevVnode, vnode)
     }
     activeInstance = prevActiveInstance
@@ -188,11 +191,13 @@ export function mountComponent (
       const startTag = `vue-perf-start:${id}`
       const endTag = `vue-perf-end:${id}`
 
+      // 统计_render函数的运行性能
       mark(startTag)
       const vnode = vm._render()
       mark(endTag)
       measure(`vue ${name} render`, startTag, endTag)
 
+      // 统计_update函数的运行性能
       mark(startTag)
       vm._update(vnode, hydrating)
       mark(endTag)
@@ -204,7 +209,7 @@ export function mountComponent (
       // 具体就是把挂载点的标签替换为渲染后的dom，
       // 其中_render函数的作用是生成一个VNode对象
       // hydrating是服务端渲染相关参数
-      // 而_update就是讲VNode渲染成真正的dom
+      // 而_update就是将VNode渲染成真正的dom
       // _update是在lifecycleMixin中定义的
       vm._update(vm._render(), hydrating)
     }
@@ -214,7 +219,7 @@ export function mountComponent (
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
   // 这里通过一个渲染watcher，来执行上面定义的updateComponent函数，
-  // 之所以这里要通过watcher的形式，是因为渲染操作在首次渲染后过后，还要不断地随着数据的变化而重新渲染
+  // 之所以这里要通过watcher的形式，是因为渲染操作在首次渲染过后，还要不断地随着数据的变化而重新渲染
   new Watcher(vm, updateComponent, noop, {
     before () {
       if (vm._isMounted) {

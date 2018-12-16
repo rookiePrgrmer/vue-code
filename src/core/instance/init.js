@@ -76,7 +76,7 @@ export function initMixin (Vue: Class<Component>) {
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
 
-    // 对模板进行挂在，目的是对页面进行渲染
+    // 对模板进行挂载，目的是对页面进行渲染
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }

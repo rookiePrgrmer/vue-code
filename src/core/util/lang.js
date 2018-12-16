@@ -23,6 +23,10 @@ export function def (obj: Object, key: string, val: any, enumerable?: boolean) {
 /**
  * Parse simple path.
  */
+// 将字符串形式的取值表达式，改成取值函数
+// 这个正则表达式的含义是，检测取值表达式中，是否包含满足下面条件的字符：
+// 没有\w、字符"."、字符"$"
+// 如果包含满足上面条件的字符，那就表示这不是一个合法的取值表达式
 const bailRE = /[^\w.$]/
 export function parsePath (path: string): any {
   if (bailRE.test(path)) {
