@@ -56,6 +56,8 @@ export function initState (vm: Component) {
     observe(vm._data = {}, true /* asRootData */)
   }
   if (opts.computed) initComputed(vm, opts.computed)
+  // 开始处理组件实例的watch属性
+  // TODO nativeWatch?
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch)
   }
@@ -290,8 +292,12 @@ function initMethods (vm: Component, methods: Object) {
 }
 
 function initWatch (vm: Component, watch: Object) {
+  // 这里遍历定义在watch上的所有属性
   for (const key in watch) {
     const handler = watch[key]
+    // 判断属性值是否是数组
+    // 从这里可以看出，watch不仅可以定义回调函数，还可以定义由回调函数组成的数组
+    // 这就代表可以为某一个实例属性定义多个观察者
     if (Array.isArray(handler)) {
       for (let i = 0; i < handler.length; i++) {
         createWatcher(vm, key, handler[i])
@@ -312,6 +318,8 @@ function createWatcher (
     options = handler
     handler = handler.handler
   }
+  // 这一段if代码块的作用是，如果handler属性不是一个回调函数，而是一个字符串时，
+  // 这就表示回调函数定义在了组件实例上面，而这个字符串表示的就是这个回调函数的名称
   if (typeof handler === 'string') {
     handler = vm[handler]
   }
@@ -344,21 +352,31 @@ export function stateMixin (Vue: Class<Component>) {
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
 
+  // 初始话工具方法$watch
+  // 注意这里的第二个参数，cb既可以是函数，也可以是一个纯对象，如果是纯对象，那么这个对象上需要有handler属性，
+  // 那么这个handler属性就会被作为回调函数
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,
     options?: Object
   ): Function {
     const vm: Component = this
+
+    // 第二个参数可以是一个对象，可以替代回调函数，
+    // 如果第二参数是一个对象，就需要在这个对象上定义一个handler属性，这个handler属性就会被作为回调函数，
+    // 此外其他配置项，比如immediate和deep也都可以定义在这个对象上
     if (isPlainObject(cb)) {
       return createWatcher(vm, expOrFn, cb, options)
     }
     options = options || {}
-    options.user = true
+    options.user = true // 表示这个watcher是用户创建的
     const watcher = new Watcher(vm, expOrFn, cb, options)
+    // 如果选项参数的immediate为true，表示实例属性被监听后立即执行回调，
+    // watcher创建以后，会对表达式求值，并将求到的值赋值给watcher的value属性
     if (options.immediate) {
       cb.call(vm, watcher.value)
     }
+    // 最终返回一个函数，这个函数用于解除对指定属性的观察
     return function unwatchFn () {
       watcher.teardown()
     }

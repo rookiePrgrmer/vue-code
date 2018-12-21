@@ -287,17 +287,24 @@ export default class Watcher {
    * Remove self from all dependencies' subscriber list.
    */
   teardown () {
+    // 判断当前的监听器是否处于激活状态
     if (this.active) {
       // remove self from vm's watcher list
       // this is a somewhat expensive operation so we skip it
       // if the vm is being destroyed.
+      // 判断当前组件是否被销毁
+      // 如果没有被销毁，则把当前监听器，从组件的监听器列表中删除
+      // 由于这个操作的开销比较大，因此只有在当前组件被销毁的情况下才执行这个操作
       if (!this.vm._isBeingDestroyed) {
         remove(this.vm._watchers, this)
       }
+      // 由于当前watcher不再使用了，
+      // 因此将当前watcher从与这个watcher相关联的Dep中全部删除
       let i = this.deps.length
       while (i--) {
         this.deps[i].removeSub(this)
       }
+      // 表示当前这个watcher不再处于激活状态
       this.active = false
     }
   }

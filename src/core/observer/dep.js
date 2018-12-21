@@ -57,6 +57,11 @@ Dep.target = null
 const targetStack = []
 
 // Dep.target保存着一个观察者对象
+// target属性的作用是，目前看来，就是想找一个全局的位置，用来保存当前正在操作的watcher,
+// 然后在watcher的构造函数中，调用属性的get函数，用来触发依赖（Dep）收集，
+// 然后把属性的依赖（Dep）添加到watcher中，
+// 与此同时，依赖（Dep）也把watcher添加到自己的subs数组中，
+// 因此这里Dep和Watcher两者是互相依赖的
 export function pushTarget (_target: ?Watcher) {
   if (Dep.target) targetStack.push(Dep.target)
   Dep.target = _target

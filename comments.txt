@@ -19,3 +19,7 @@
 <div id="demo">{{name}}</div>
 
 以上面的模板为例，它首先会被编译成渲染函数（render）。接着创建一个渲染函数的观察者，从而对渲染函数求值，在求值的过程中会触发数据对象name属性的get拦截器函数，进而将该观察者收集到name属性通过闭包引用的"筐"中，即收集到Dep实例对象中。这个Dep实例对象是属于name属性自身所拥有的，这样当我们尝试修改数据对象name属性的值时就会触发name属性的set拦截器函数，这样就有机会调用Dep实例对象的notify方法，从而触发响应。
+
+5、Vue中$nextTick的实现
+
+当调用栈空闲后每次事件循环只会从(macro)task中读取一个任务并执行，而在同一次事件循环内会将microtask队列中所有的任务全部执行完毕，且要先于(macro)task。另外(macro)task中两个不同的任务之间可能穿插着UI的重渲染，那么我们只需要在microtask中把所有在UI重渲染之前需要更新的数据全部更新，这样只需要一次重渲染就能得到最新的DOM了。恰好Vue是一个数据驱动的框架，如果能在UI重渲染之前更新所有数据状态，这对性能的提升是一个很大的帮助，所以要优先选用microtask去更新数据状态而不是(macro)task。这就是为什么不使用setTimeout的原因，因为setTimeout会将回调放到(macro)task队列中而不是microtask队列，所以理论上最优的选择是使用Promise，当浏览器不支持Promise时再降级为setTimeout。

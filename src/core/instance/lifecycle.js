@@ -226,7 +226,7 @@ export function mountComponent (
         callHook(vm, 'beforeUpdate')
       }
     }
-  }, true /* isRenderWatcher */) // 这个true，表示这个watcher是一个渲染watcher
+  }, true /* isRenderWatcher */) // 这个true，表示这个watcher是一个渲染（render）watcher
   hydrating = false
 
   // manually mounted instance, call mounted on self
