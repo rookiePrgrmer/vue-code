@@ -140,6 +140,8 @@ export default class Watcher {
     } finally {
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
+      // 是否深度观测，如果是深度观测，
+      // 那么就会递归地遍历value的所有属性，然后触发这些属性的get拦截器
       if (this.deep) {
         traverse(value)
       }
