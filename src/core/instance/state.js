@@ -55,6 +55,7 @@ export function initState (vm: Component) {
   } else {
     observe(vm._data = {}, true /* asRootData */)
   }
+  // 判断vue实例上是否设置了computed属性
   if (opts.computed) initComputed(vm, opts.computed)
   // 开始处理组件实例的watch属性
   // TODO nativeWatch?
@@ -174,14 +175,17 @@ export function getData (data: Function, vm: Component): any {
 
 const computedWatcherOptions = { lazy: true }
 
+// 初始化计算属性
 function initComputed (vm: Component, computed: Object) {
   // $flow-disable-line
+  // watchers和vm._computedWatchers用来存储计算属性的watcher
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
   const isSSR = isServerRendering()
 
   for (const key in computed) {
     const userDef = computed[key]
+    // 这个判断对应计算属性的两种写法：函数写法和对象写法，对象写法上需要定义get/set函数
     const getter = typeof userDef === 'function' ? userDef : userDef.get
     if (process.env.NODE_ENV !== 'production' && getter == null) {
       warn(
@@ -190,12 +194,17 @@ function initComputed (vm: Component, computed: Object) {
       )
     }
 
+    // 非服务端渲染
     if (!isSSR) {
       // create internal watcher for the computed property.
+      // 为每一个计算属性都创建了一个watcher，称之为计算属性的watcher
       watchers[key] = new Watcher(
         vm,
         getter || noop,
         noop,
+        // 选项对象，就一个属性——lazy: true，
+        // 用于标识这个watcher是一个计算属性watcher，
+        // 因为计算属性的行为和菲计算属性的行为是不一样的
         computedWatcherOptions
       )
     }
@@ -203,8 +212,11 @@ function initComputed (vm: Component, computed: Object) {
     // component-defined computed properties are already defined on the
     // component prototype. We only need to define computed properties defined
     // at instantiation here.
+    // 如果在data和props没有发现同名属性
     if (!(key in vm)) {
       defineComputed(vm, key, userDef)
+    // 如果计算属性的名称，已经被定义为了data或props，
+    // 那么为了防止重名，会在非生产环境中给出错误提示
     } else if (process.env.NODE_ENV !== 'production') {
       if (key in vm.$data) {
         warn(`The computed property "${key}" is already defined in data.`, vm)
@@ -220,18 +232,27 @@ export function defineComputed (
   key: string,
   userDef: Object | Function
 ) {
+  // 只有在非服务端渲染的情况下，才会缓存计算属性的值
   const shouldCache = !isServerRendering()
+  // 判断计算属性的值是否是函数
   if (typeof userDef === 'function') {
+    // 如果需要缓存，那么通过createComputedGetter生成一个取值函数，
+    // 否则就直接使用开发者指定的计算属性函数
     sharedPropertyDefinition.get = shouldCache
       ? createComputedGetter(key)
       : userDef
+    // 如果开发者指定的计算属性是函数，那么显然这个属性并没有设置set拦截函数
     sharedPropertyDefinition.set = noop
+  // 如果计算属性是一个对象
   } else {
+    // 如果计算属性对象的get函数存在，并且不是服务端渲染，并且开发者没有指定不缓存计算属性值，
+    // 那么就通过createComputedGetter函数生成取值函数
     sharedPropertyDefinition.get = userDef.get
       ? shouldCache && userDef.cache !== false
         ? createComputedGetter(key)
         : userDef.get
       : noop
+    // 如果计算属性对象指定了set函数
     sharedPropertyDefinition.set = userDef.set
       ? userDef.set
       : noop
@@ -245,9 +266,14 @@ export function defineComputed (
       )
     }
   }
+
+  // defineComputed函数的核心代码，就是通过defineProperty，
+  // 为vue实例设置这个计算属性，
+  // 而这个defineComputed函数，函数体的主要工作就是在完善计算属性的配置对象——sharedPropertyDefinition
   Object.defineProperty(target, key, sharedPropertyDefinition)
 }
 
+// 计算属性取值函数生成器
 function createComputedGetter (key) {
   return function computedGetter () {
     const watcher = this._computedWatchers && this._computedWatchers[key]
