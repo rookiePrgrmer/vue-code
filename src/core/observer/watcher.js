@@ -64,6 +64,7 @@ export default class Watcher {
       // 除了内部定义的观察者（渲染函数的观察者，或者计算属性的观察者），
       // 其他观察者都被认为是开发者定义的，此时user属性会自动被设置为true
       this.user = !!options.user
+      // 是否是惰性求值，目前只有计算属性的观察为options.lazy为true
       this.lazy = !!options.lazy
       // 当数据变化时，是否同步求值并执行回调
       // 默认情况下，当数据变化时，不会同步求值并执行回调，
@@ -108,9 +109,11 @@ export default class Watcher {
         )
       }
     }
+
+    // 目前已知的情况来看，只有计算属性时惰性求值，因此this.lazy为true
     this.value = this.lazy
       ? undefined
-      : this.get() // 最后这里调用了一次get方法
+      : this.get() // 非计算属性的观察者，最后这里调用了一次get方法
   }
 
   /**
@@ -120,8 +123,8 @@ export default class Watcher {
   // 第一是能够触发访问器属性的get拦截器函数，以此来收集依赖，
   // 第二是能够获得被观察目标的值
   get () {
-    // pushTarget的目的是，
-    // 为Dep对象设置target属性，以便正确执行get拦截器函数
+    // 在全局位置Dep.target，缓存当前正在执行get的观察者，并把这个观察者保存到观察者堆中，
+    // 一定要注意，在同一时间只会操作一个观察者，当前观察者操作完成，就会从堆中退出
     pushTarget(this)
     let value
     const vm = this.vm
@@ -129,7 +132,7 @@ export default class Watcher {
       // 这里又调用了expOrFn，也就是实例化Watcher时，传入的updateComponent
       // 而updateComponent的方法体就是：vm._update(vm._render(), hydrating)
       // 其实这行代码，最直观的理解就是对求值表达式的求值操作，
-      // 而求值操作，才能触发数据属性的f拦截器函数
+      // 而求值操作，才能触发数据属性的get拦截器函数
       value = this.getter.call(vm, vm)
     } catch (e) {
       if (this.user) {
@@ -145,6 +148,7 @@ export default class Watcher {
       if (this.deep) {
         traverse(value)
       }
+      // 将当前观察者从堆中退出
       popTarget()
       // 每次求值结束以后，都会把当次收集的依赖newDeps通过deps保存起来,
       // 然后清空当次收集的依赖newDeps
@@ -241,8 +245,7 @@ export default class Watcher {
         // when the value is the same, because the value may
         // have mutated.
         // 对于value是对象的情况来说，
-        // 即使value === value也并不一定不触发更新，
-        //
+        // 即使value === value也并不一定不触发更新
         isObject(value) ||
         this.deep
       ) {
@@ -269,7 +272,13 @@ export default class Watcher {
    * Evaluate the value of the watcher.
    * This only gets called for lazy watchers.
    */
+  // 对计算属性的观察者进行求值
   evaluate () {
+    // 指定计算属性的get函数时，如果计算属性内部又依赖的vue实例数据，
+    // 也就是data上定义的数据，那么这些数据的get拦截器函数也会依次执行，
+    // 在下面的this.get函数执行时，首先会把Dep.target设置为当前计算属性的观察者，
+    // 因此上述data数据的get拦截器执行时，计算属性的观察者就会把这些数据的依赖都收集了起来，
+    // 为后续调用计算属性的depend方法做准备
     this.value = this.get()
     // 将dirty设置为false，表示对计算属性求过值了
     this.dirty = false

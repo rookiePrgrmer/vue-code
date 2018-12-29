@@ -115,7 +115,7 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
-    shouldObserve &&
+    shouldObserve && // 只有全局开关shouldObserve为true才能对数据对象进行深度观测
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
     Object.isExtensible(value) &&
@@ -153,6 +153,7 @@ export function defineReactive (
     val = obj[key]
   }
 
+  // observe方法内部，只有shouldObserve为true才会进行深度观测
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,
@@ -216,6 +217,11 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
     return val
   }
   const ob = (target: any).__ob__
+  // vue实例的属性，或者vm.data的属性不能是响应式的
+  // 对于vue实例来说，开发者不能随意覆盖其上的属性
+  // 对于根数据对象来说，它不会被依赖，因此它收集不到依赖它的观察者
+  // 换句话说，没有观察者在观察根数据对象，因此它的属性发生变化时，它通知不到任何观察者，
+  // 也就无法触发更新了
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== 'production' && warn(
       'Avoid adding reactive properties to a Vue instance or its root $data ' +

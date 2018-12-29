@@ -10,7 +10,7 @@ import {
   del,
   observe,
   defineReactive,
-  toggleObserving
+  toggleObserving, shouldObserve
 } from '../observer/index'
 
 import {
@@ -65,18 +65,26 @@ export function initState (vm: Component) {
 }
 
 function initProps (vm: Component, propsOptions: Object) {
+  // propsData用来存放外界传递给组件的属性，propsData的创建依赖于编译器解析
   const propsData = vm.$options.propsData || {}
   const props = vm._props = {}
   // cache prop keys so that future props updates can iterate using Array
   // instead of dynamic object key enumeration.
   const keys = vm.$options._propKeys = []
+  // 是否是根组件
   const isRoot = !vm.$parent
   // root instance props should be converted
+  // 这个判断表示，只有不是根组件
   if (!isRoot) {
+    // toggleObserving的作用是，切换observer类内部的shouldObserve变量true/false
+    // 只有shouldObserve的值为true，才能对props上的对象数据属性进行深度响应式处理
+    // 那么这样处理的原因是，设置到props上的对象数据本身，通常已经是响应式的了，因此无需重复响应式处理
     toggleObserving(false)
   }
+  // 遍历开发者设置的props属性
   for (const key in propsOptions) {
     keys.push(key)
+    // validateProp的作用是对相应的prop属性的类型进行验证，并返回开发者传递的prop属性值
     const value = validateProp(key, propsOptions, propsData, vm)
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
@@ -257,6 +265,10 @@ export function defineComputed (
       ? userDef.set
       : noop
   }
+  // 如果计算属是一个对象，但是只指定了get函数，而没有指定set函数时，
+  // 在非生产环境下，会重新设置计算属性的set函数，
+  // 并且这个set函数的函数体为一个警告，
+  // 此时如果给这个计算属性赋值，就会打印这段警告
   if (process.env.NODE_ENV !== 'production' &&
       sharedPropertyDefinition.set === noop) {
     sharedPropertyDefinition.set = function () {

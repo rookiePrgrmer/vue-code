@@ -148,6 +148,7 @@ export function queueWatcher (watcher: Watcher) {
       while (i > index && queue[i].id > watcher.id) {
         i--
       }
+      // 将当前观察者按照id的大小插入到合适的位置，保证其按顺序执行
       queue.splice(i + 1, 0, watcher)
     }
     // queue the flush

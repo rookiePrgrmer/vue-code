@@ -42,6 +42,11 @@ export default class Dep {
       // subs aren't sorted in scheduler if not running async
       // we need to sort them now to make sure they fire in correct
       // order
+      // 这行代码的作用是，在同步执行观察者的时候，保证观察者能够按照创建顺序执行
+      // 那么什么时候需要同步执行观察者呢？在使用vue-test-utils时，为了方便调试，会把全局的async(/src/core/config.js)设置为false，
+      // 也就上面的config.async，
+      // 那么在执行观察者的update方法时，即使是异步更新，其实也会对观察者进行排序，因此这里由于不再通过统一的异步方式更新，
+      // 因此也要进行排序
       subs.sort((a, b) => a.id - b.id)
     }
     for (let i = 0, l = subs.length; i < l; i++) {
@@ -53,7 +58,9 @@ export default class Dep {
 // the current target watcher being evaluated.
 // this is globally unique because there could be only one
 // watcher being evaluated at any time.
+// 用于指向当前正在求值的观察者
 Dep.target = null
+// 观察者堆，按照依赖关系，由外到内
 const targetStack = []
 
 // Dep.target保存着一个观察者对象
