@@ -280,10 +280,12 @@ export function updateChildComponent (
     for (let i = 0; i < propKeys.length; i++) {
       const key = propKeys[i]
       const propOptions: any = vm.$options.props // wtf flow?
+      // 这里的 propsData 是待更新的新props属性值
       props[key] = validateProp(key, propOptions, propsData, vm)
     }
     toggleObserving(true)
     // keep a copy of raw propsData
+    // 最后这里使用新的props数据更新老的props
     vm.$options.propsData = propsData
   }
 

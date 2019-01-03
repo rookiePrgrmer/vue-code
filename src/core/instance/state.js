@@ -64,6 +64,9 @@ export function initState (vm: Component) {
   }
 }
 
+/*
+  propsOptions表示定义在组件props上的每个属性的属性参数，比如定义这个属性的类型，以及它的默认值
+*/
 function initProps (vm: Component, propsOptions: Object) {
   // propsData用来存放外界传递给组件的属性，propsData的创建依赖于编译器解析
   const propsData = vm.$options.propsData || {}
