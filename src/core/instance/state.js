@@ -113,7 +113,14 @@ function initProps (vm: Component, propsOptions: Object) {
     // static props are already proxied on the component's prototype
     // during Vue.extend(). We only need to proxy props defined at
     // instantiation here.
+    // 只有Key不在组件实例对象上以及其原型链上没有定义时才会进行代理，
+    // 这是一个针对子组件的优化操作，对于子组件来讲这个代理工作在创建子组件构造函数时就完成了，
+    // 即在Vue.extend函数中完成的，这么做的目的是避免每次创建子组件实例时都会调用proxy函数组做代理，
+    // 由于proxy函数中使用了Object.defineProperty函数，该函数的性能表现不佳，所以这么做能够提升一定的性能指标
     if (!(key in vm)) {
+      // 这段代码的作用是，在vm组件实例上定义vm.props的同名属性，
+      // 使得我们能够通过组件实例对象直接访问props数据，
+      // 但其最终代理的值仍然是 vm._props 对象下定义的 props 数据
       proxy(vm, `_props`, key)
     }
   }

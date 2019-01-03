@@ -95,6 +95,8 @@ export function toNumber (val: string): number | string {
  * Make a map and return a function for checking if a key
  * is in that map.
  */
+// 创建一个map，然后生成并返回一个函数。
+// 这个函数的功能是，判断给定的元素是否包含在这个map中。
 export function makeMap (
   str: string,
   expectsLowerCase?: boolean
@@ -117,10 +119,10 @@ export const isBuiltInTag = makeMap('slot,component', true)
 /**
  * Check if an attribute is a reserved attribute.
  */
+// 是否是保留属性名
 export const isReservedAttribute = makeMap('key,ref,slot,slot-scope,is')
 
 /**
- * Remove an item from an array.
  */
 export function remove (arr: Array<any>, item: any): Array<any> | void {
   if (arr.length) {
@@ -142,6 +144,7 @@ export function hasOwn (obj: Object | Array<*>, key: string): boolean {
 /**
  * Create a cached version of a pure function.
  */
+// 将传入的函数修改为带有缓存功能的函数
 export function cached<F: Function> (fn: F): F {
   const cache = Object.create(null)
   return (function cachedFn (str: string) {
@@ -168,6 +171,9 @@ export const capitalize = cached((str: string): string => {
 /**
  * Hyphenate a camelCase string.
  */
+// \B表示非单词边界
+// 通常我们命名变量的时候，都是驼峰命名，因此除了第一个单词以外，均是首字母大写，
+// hyphenate的作用是，将变量中的单词全部首字母小写，然后用连字符连接起来
 const hyphenateRE = /\B([A-Z])/g
 export const hyphenate = cached((str: string): string => {
   return str.replace(hyphenateRE, '-$1').toLowerCase()
