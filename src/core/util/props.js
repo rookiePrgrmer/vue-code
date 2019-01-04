@@ -70,6 +70,9 @@ export function validateProp (
     observe(value)
     toggleObserving(prevShouldObserve)
   }
+
+  // 下面 if 判断里面的代码才是真正进行prop属性类型验证的代码
+  // 但从 if 判断条件可知，只有在非生产环境下才会进行类型校验
   if (
     process.env.NODE_ENV !== 'production' &&
     // skip validation for weex recycle-list child component props
@@ -150,6 +153,7 @@ function getPropDefaultValue (vm: ?Component, prop: PropOptions, key: string): a
 /**
  * Assert whether a prop is valid.
  */
+// 校验prop值是否合法
 function assertProp (
   prop: PropOptions,
   name: string,
@@ -157,6 +161,7 @@ function assertProp (
   vm: ?Component,
   absent: boolean
 ) {
+  // 如果某个 prop 是必传的，但是开发者却没有传，也就是absent为true，此时给出错误提示
   if (prop.required && absent) {
     warn(
       'Missing required prop: "' + name + '"',
@@ -164,23 +169,32 @@ function assertProp (
     )
     return
   }
+  // 如果某个 prop 是必传的，但是传的值为 undefined 或是 null ，就会直接返回
   if (value == null && !prop.required) {
     return
   }
   let type = prop.type
+  // valid 变量表示的就是本次校验结果
+  // valid 的初始化代码表示，如果开发者在定义 prop 时没有给定类型，那么直接验证通过，因为此时 valid 为 true
+  // 或者可以直接将 type 设置为true，那么也可以直接验证通过
   let valid = !type || type === true
   const expectedTypes = []
   if (type) {
     if (!Array.isArray(type)) {
       type = [type]
     }
+    // 循环结果条件有二：1、遍历对最后一个元素；2、满足类型数组其中一个类型
     for (let i = 0; i < type.length && !valid; i++) {
+      // assertType 方法返回该 prop 期望的类型（之一），以及是否符合这个类型的结果
       const assertedType = assertType(value, type[i])
+      // 将期望的类型存储起来
       expectedTypes.push(assertedType.expectedType || '')
+      // 以本次验证结果覆盖 valid
       valid = assertedType.valid
     }
   }
 
+  // 如果遍历了类型数组中的所有类型，依旧不匹配，则给出错误提示
   if (!valid) {
     warn(
       getInvalidTypeMessage(name, value, expectedTypes),
@@ -188,8 +202,11 @@ function assertProp (
     )
     return
   }
+  // 运行到这里表示前面的校验全部通过，开始执行开发者自定义校验函数
   const validator = prop.validator
+  // 如果开发者定义了自定义校验函数
   if (validator) {
+    // 执行自定义校验函数，判断返回值，如果校验失败，则给出错误提示
     if (!validator(value)) {
       warn(
         'Invalid prop: custom validator check failed for prop "' + name + '".',
@@ -207,17 +224,22 @@ function assertType (value: any, type: Function): {
 } {
   let valid
   const expectedType = getType(type)
+  // 判断给定值是否是上面5种基本类型之一
   if (simpleCheckRE.test(expectedType)) {
     const t = typeof value
     valid = t === expectedType.toLowerCase()
     // for primitive wrapper objects
+    // 这里 valid 为 false 不代表类型不符合，而有可能是因为这个值是基本数据类型包装类，比如 new String('foo')
+    // 因此还要进一步判断
     if (!valid && t === 'object') {
       valid = value instanceof type
     }
+  // 以下情况判断非5种基本数据类型的情况
   } else if (expectedType === 'Object') {
     valid = isPlainObject(value)
   } else if (expectedType === 'Array') {
     valid = Array.isArray(value)
+  // 是否是自定义类型
   } else {
     valid = value instanceof type
   }

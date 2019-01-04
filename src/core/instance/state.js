@@ -68,8 +68,9 @@ export function initState (vm: Component) {
   propsOptions表示定义在组件props上的每个属性的属性参数，比如定义这个属性的类型，以及它的默认值
 */
 function initProps (vm: Component, propsOptions: Object) {
-  // propsData用来存放外界传递给组件的属性，propsData的创建依赖于编译器解析
+  // propsData用来存放外界传递给组件的属性值，propsData的创建依赖于编译器解析
   const propsData = vm.$options.propsData || {}
+  // props用于存储当前组件props的实际值，可能是开发者传递的，也可能是默认值
   const props = vm._props = {}
   // cache prop keys so that future props updates can iterate using Array
   // instead of dynamic object key enumeration.
@@ -77,21 +78,23 @@ function initProps (vm: Component, propsOptions: Object) {
   // 是否是根组件
   const isRoot = !vm.$parent
   // root instance props should be converted
-  // 这个判断表示，只有不是根组件
+  // 如果不是根组件
   if (!isRoot) {
     // toggleObserving的作用是，切换observer类内部的shouldObserve变量true/false
     // 只有shouldObserve的值为true，才能对props上的对象数据属性进行深度响应式处理
-    // 那么这样处理的原因是，设置到props上的对象数据本身，通常已经是响应式的了，因此无需重复响应式处理
+    // 那么这样处理的原因是，设置到props上的对象数据本身，因为是由外部传入，
+    // 通常已经是响应式的了，因此无需重复响应式处理
     toggleObserving(false)
   }
   // 遍历开发者设置的props属性
   for (const key in propsOptions) {
     keys.push(key)
-    // validateProp的作用是对相应的prop属性的类型进行验证，并返回开发者传递的prop属性值
+    // validateProp 的作用是对相应的 prop 属性的类型进行验证，并返回开发者传递的prop属性值
     const value = validateProp(key, propsOptions, propsData, vm)
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
       const hyphenatedKey = hyphenate(key)
+      // 如果是内部保留属性名，或者开发者定义的保留属性名，则会给出警告提示
       if (isReservedAttribute(hyphenatedKey) ||
           config.isReservedAttr(hyphenatedKey)) {
         warn(
@@ -311,10 +314,13 @@ function createComputedGetter (key) {
   }
 }
 
+// 初始化 methods
 function initMethods (vm: Component, methods: Object) {
   const props = vm.$options.props
   for (const key in methods) {
+    // 以下判断只有在非生产环境下才会执行
     if (process.env.NODE_ENV !== 'production') {
+      // 如果该属性并没有具体的方法实体
       if (methods[key] == null) {
         warn(
           `Method "${key}" has an undefined value in the component definition. ` +
@@ -322,12 +328,16 @@ function initMethods (vm: Component, methods: Object) {
           vm
         )
       }
+      // 由于 props 的初始化先于 methods 因此这里判断 props 中的属性是否与 methods 中的冲突，否则会给出提示
       if (props && hasOwn(props, key)) {
         warn(
           `Method "${key}" has already been defined as a prop.`,
           vm
         )
       }
+      // 如果该属性已经定义在组件实例上，并且这个属性名称是保留名称，则给出错误提示，
+      // 保留名称是以 $ 或 _ 开头的字段
+      // 因为这一类属性名称可能与 Vue 内部定义的变量名冲突
       if ((key in vm) && isReserved(key)) {
         warn(
           `Method "${key}" conflicts with an existing Vue instance method. ` +
@@ -335,6 +345,7 @@ function initMethods (vm: Component, methods: Object) {
         )
       }
     }
+    // 关键代码，就是把 methods 上定义的函数，再赋值给组件实例
     vm[key] = methods[key] == null ? noop : bind(methods[key], vm)
   }
 }
